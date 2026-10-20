@@ -5,15 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WorldAir Chat</title>
 <style>
-body{font-family:sans-serif;background:#eaf6ff;margin:0}
+body{font-family:Arial;background:#eaf6ff;margin:0}
 header{background:linear-gradient(to right,#00b894,#0984e3);color:white;padding:25px;text-align:center}
 .container{max-width:500px;margin:15px auto;padding:10px}
-.search-box{display:flex;gap:8px;margin-bottom:10px}
-input{flex:1;padding:12px;border-radius:10px;border:1px solid #ccc}
+input{width:70%;padding:12px;border-radius:10px;border:1px solid #ccc}
 button{padding:12px 18px;background:#0984e3;color:white;border:none;border-radius:10px;cursor:pointer}
 .card{background:white;padding:18px;border-radius:15px;margin-top:15px;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
-#chatBox{height:180px;overflow-y:auto;background:#f8f9fa;padding:10px;border-radius:10px;margin:10px 0}
-.msg{padding:7px 0;border-bottom:1px solid #eee;font-size:14px}
 </style>
 </head>
 <body>
@@ -23,10 +20,8 @@ button{padding:12px 18px;background:#0984e3;color:white;border:none;border-radiu
 </header>
 
 <div class="container">
-<div class="search-box">
 <input id="cityInput" placeholder="Lahore likho...">
 <button onclick="searchCity()">Search</button>
-</div>
 
 <div class="card">
 <h2 id="cityName">Karachi</h2>
@@ -35,14 +30,35 @@ button{padding:12px 18px;background:#0984e3;color:white;border:none;border-radiu
 <div id="aqiBox" style="background:#ffeaa7;padding:12px;border-radius:10px;font-weight:bold">AQI: 56 - Moderate</div>
 <p id="advice">💡 Mask pehno, air moderate hai</p>
 </div>
-
-<div class="card">
-<h3>💬 Community Chat - Live</h3>
-<div id="chatBox">
-<div class="msg"><b>Ali:</b> Lahore me AQI 180 hai</div>
-<div class="msg"><b>Sara:</b> Karachi me aj hawa theek hai</div>
 </div>
-<div class="search-box">
-<input id="chatInput" placeholder="Apna message likho...">
-<button onclick="sendChat()">Send</button>
-</
+
+<script>
+async function searchCity(){
+let city=document.getElementById('cityInput').value;
+if(!city){city='Lahore';}
+document.getElementById('cityName').innerText=city+' Loading...';
+try{
+let g=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+city+'&count=1');
+let gd=await g.json();
+if(!gd.results){alert('City not found');return;}
+let lat=gd.results[0].latitude;
+let lon=gd.results[0].longitude;
+let name=gd.results[0].name;
+let w=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current_weather=true');
+let wd=await w.json();
+let a=await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+lat+'&longitude='+lon+'&current=us_aqi');
+let ad=await a.json();
+document.getElementById('cityName').innerText=name;
+document.getElementById('temp').innerText=wd.current_weather.temperature+'°C';
+document.getElementById('desc').innerText='Live Weather - Wind: '+wd.current_weather.windspeed+' km/h';
+let aqi=ad.current.us_aqi;
+let box=document.getElementById('aqiBox');
+let advice=document.getElementById('advice');
+if(aqi<=50){box.style.background='#55efc4';box.innerText='AQI: '+aqi+' - Good';advice.innerText='💡 Hawa saaf hai';}
+else if(aqi<=100){box.style.background='#ffeaa7';box.innerText='AQI: '+aqi+' - Moderate';advice.innerText='💡 Mask pehno';}
+else{box.style.background='#ff7675';box.innerText='AQI: '+aqi+' - Unhealthy';advice.innerText='😷 Ghar me raho';}
+}catch(e){alert(e.message);}
+}
+</script>
+</body>
+</html>
