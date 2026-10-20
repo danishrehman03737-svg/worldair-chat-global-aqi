@@ -1,70 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>WorldAir Chat</title>
-<link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorldAir Chat</title>
+<style>
+body{font-family:sans-serif;background:#eaf6ff;margin:0}
+header{background:linear-gradient(to right,#00b894,#0984e3);color:white;padding:25px;text-align:center}
+.container{max-width:500px;margin:15px auto;padding:10px}
+.search-box{display:flex;gap:8px;margin-bottom:10px}
+input{flex:1;padding:12px;border-radius:10px;border:1px solid #ccc}
+button{padding:12px 18px;background:#0984e3;color:white;border:none;border-radius:10px;cursor:pointer}
+.card{background:white;padding:18px;border-radius:15px;margin-top:15px;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+#chatBox{height:180px;overflow-y:auto;background:#f8f9fa;padding:10px;border-radius:10px;margin:10px 0}
+.msg{padding:7px 0;border-bottom:1px solid #eee;font-size:14px}
+</style>
 </head>
 <body>
 <header>
 <h1>🌍 WorldAir Chat</h1>
 <p>Global AQI & Weather Platform</p>
 </header>
+
 <div class="container">
 <div class="search-box">
-<input type="text" id="cityInput" placeholder="Enter city e.g. Lahore">
+<input id="cityInput" placeholder="Lahore likho...">
 <button onclick="searchCity()">Search</button>
 </div>
-<div class="card" id="result">
-<h2 id="cityName">Faisalabad</h2>
-<h3 id="temp">28°C</h3>
-<p id="desc">Hazy Sunshine</p>
-<div id="aqiBox" style="background:#ffeaa7;padding:10px;border-radius:10px;">AQI: 156 - Moderate</div>
-<p id="advice">💡 Mask pehno</p>
-</div>
+
 <div class="card">
-<h3>💬 Community Chat</h3>
-<p>Ali: Lahore me AQI 180 hai</p>
+<h2 id="cityName">Karachi</h2>
+<h3 id="temp">35.9°C</h3>
+<p id="desc">Live Weather - Wind: 12.4 km/h</p>
+<div id="aqiBox" style="background:#ffeaa7;padding:12px;border-radius:10px;font-weight:bold">AQI: 56 - Moderate</div>
+<p id="advice">💡 Mask pehno, air moderate hai</p>
 </div>
+
+<div class="card">
+<h3>💬 Community Chat - Live</h3>
+<div id="chatBox">
+<div class="msg"><b>Ali:</b> Lahore me AQI 180 hai</div>
+<div class="msg"><b>Sara:</b> Karachi me aj hawa theek hai</div>
 </div>
-<script>
-async function searchCity(){
-  let city = document.getElementById('cityInput').value;
-  if(!city) city='Faisalabad';
-  document.getElementById('cityName').innerText = city + " (Searching...)";
-  try {
-    // 1. Get Lat Lon
-    let geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`);
-    let geoData = await geoRes.json();
-    if(!geoData.results) { alert("City nahi mili"); return; }
-    let lat = geoData.results[0].latitude;
-    let lon = geoData.results[0].longitude;
-    let name = geoData.results[0].name;
-    // 2. Weather
-    let weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-    let weatherData = await weatherRes.json();
-    // 3. AQI
-    let aqiRes = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi`);
-    let aqiData = await aqiRes.json();
-    
-    let temp = weatherData.current_weather.temperature;
-    let aqi = aqiData.current.us_aqi;
-    
-    document.getElementById('cityName').innerText = name;
-    document.getElementById('temp').innerText = temp + "°C";
-    document.getElementById('desc').innerText = "Live Weather - Wind: " + weatherData.current_weather.windspeed + " km/h";
-    
-    let aqiText = "Good", color="#55efc4", advice="💡 Hawa saaf hai, bahar jao!";
-    if(aqi>50){aqiText="Moderate"; color="#ffeaa7"; advice="💡 Mask pehno, air moderate hai";}
-    if(aqi>100){aqiText="Unhealthy for Sensitive"; color="#fab1a0"; advice="😷 Sensitive log bahar na jayen";}
-    if(aqi>150){aqiText="Unhealthy"; color="#ff7675"; advice="🚨 Bahar mat niklo!";}
-    
-    let box = document.getElementById('aqiBox');
-    box.innerText = `AQI: ${aqi} - ${aqiText}`;
-    box.style.background = color;
-    document.getElementById('advice').innerText = advice;
-  } catch(e){ alert("Error: " + e.message); }
-}
-</script>
-</body>
-</html>
+<div class="search-box">
+<input id="chatInput" placeholder="Apna message likho...">
+<button onclick="sendChat()">Send</button>
+</
