@@ -12,23 +12,59 @@
 </header>
 <div class="container">
 <div class="search-box">
-<input type="text" id="cityInput" placeholder="Enter city e.g. Faisalabad">
-<button onclick="getWeather()">Search</button>
+<input type="text" id="cityInput" placeholder="Enter city e.g. Lahore">
+<button onclick="searchCity()">Search</button>
 </div>
-<div id="weatherCard" class="card">
+<div class="card" id="result">
 <h2 id="cityName">Faisalabad</h2>
 <h3 id="temp">28°C</h3>
 <p id="desc">Hazy Sunshine</p>
-<div id="aqiBox">AQI: 156 - Moderate</div>
-<p>💡 Mask pehno, air moderate hai</p>
+<div id="aqiBox" style="background:#ffeaa7;padding:10px;border-radius:10px;">AQI: 156 - Moderate</div>
+<p id="advice">💡 Mask pehno</p>
 </div>
 <div class="card">
 <h3>💬 Community Chat</h3>
-<div>Ali: Lahore me AQI 180 hai</div>
-<br>
-<input type="text" placeholder="Your message">
-<button>Send</button>
+<p>Ali: Lahore me AQI 180 hai</p>
 </div>
 </div>
+<script>
+async function searchCity(){
+  let city = document.getElementById('cityInput').value;
+  if(!city) city='Faisalabad';
+  document.getElementById('cityName').innerText = city + " (Searching...)";
+  try {
+    // 1. Get Lat Lon
+    let geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`);
+    let geoData = await geoRes.json();
+    if(!geoData.results) { alert("City nahi mili"); return; }
+    let lat = geoData.results[0].latitude;
+    let lon = geoData.results[0].longitude;
+    let name = geoData.results[0].name;
+    // 2. Weather
+    let weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+    let weatherData = await weatherRes.json();
+    // 3. AQI
+    let aqiRes = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi`);
+    let aqiData = await aqiRes.json();
+    
+    let temp = weatherData.current_weather.temperature;
+    let aqi = aqiData.current.us_aqi;
+    
+    document.getElementById('cityName').innerText = name;
+    document.getElementById('temp').innerText = temp + "°C";
+    document.getElementById('desc').innerText = "Live Weather - Wind: " + weatherData.current_weather.windspeed + " km/h";
+    
+    let aqiText = "Good", color="#55efc4", advice="💡 Hawa saaf hai, bahar jao!";
+    if(aqi>50){aqiText="Moderate"; color="#ffeaa7"; advice="💡 Mask pehno, air moderate hai";}
+    if(aqi>100){aqiText="Unhealthy for Sensitive"; color="#fab1a0"; advice="😷 Sensitive log bahar na jayen";}
+    if(aqi>150){aqiText="Unhealthy"; color="#ff7675"; advice="🚨 Bahar mat niklo!";}
+    
+    let box = document.getElementById('aqiBox');
+    box.innerText = `AQI: ${aqi} - ${aqiText}`;
+    box.style.background = color;
+    document.getElementById('advice').innerText = advice;
+  } catch(e){ alert("Error: " + e.message); }
+}
+</script>
 </body>
 </html>
