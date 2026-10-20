@@ -1,53 +1,274 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>WorldAir Chat</title>
+
 <style>
-body{font-family:Arial;background:#eaf6ff;margin:0}
-header{background:linear-gradient(to right,#00b894,#0984e3);color:white;padding:25px;text-align:center}
-.container{max-width:500px;margin:15px auto;padding:10px}
-input{width:70%;padding:12px;border-radius:10px;border:1px solid #ccc}
-button{padding:12px 18px;background:#0984e3;color:white;border:none;border-radius:10px;cursor:pointer}
-.card{background:white;padding:18px;border-radius:15px;margin-top:15px;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+body {
+    font-family: Arial, sans-serif;
+    background: #eaf6ff;
+    margin: 0;
+}
+
+header {
+    background: linear-gradient(to right, #00b894, #0984e3);
+    color: white;
+    padding: 25px;
+    text-align: center;
+}
+
+.container {
+    max-width: 500px;
+    margin: 15px auto;
+    padding: 10px;
+}
+
+input {
+    width: 70%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+button {
+    padding: 12px 18px;
+    background: #0984e3;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #076bb5;
+}
+
+.card {
+    background: white;
+    padding: 18px;
+    border-radius: 15px;
+    margin-top: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+#aqiBox {
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: bold;
+}
 </style>
 </head>
+
 <body>
+
 <header>
-<h1>🌍 WorldAir Chat</h1>
-<p>Global AQI & Weather Platform</p>
+    <h1>🌍 WorldAir Chat</h1>
+    <p>Global AQI & Weather Platform</p>
 </header>
 
 <div class="container">
-<input id="cityInput" placeholder="Enter city name... e.g. London">
-<button onclick="searchCity()">Search</button>
 
-<div class="card">
-<h2 id="cityName">Karachi</h2>
-<h3 id="temp">35.9°C</h3>
-<p id="desc">Live Weather - Wind: 12.4 km/h</p>
-<div id="aqiBox" style="background:#ffeaa7;padding:12px;border-radius:10px;font-weight:bold">AQI: 56 - Moderate</div>
-<p id="advice">Wear a mask, air quality is moderate</p>
-</div>
+    <input
+        id="cityInput"
+        type="text"
+        placeholder="Enter city name..."
+    >
+
+    <button onclick="searchCity()">Search</button>
+
+    <div class="card">
+
+        <h2 id="cityName">Karachi</h2>
+
+        <h3 id="temp">35.9°C</h3>
+
+        <p id="desc">Current Weather - Wind: 12.4 km/h</p>
+
+        <div
+            id="aqiBox"
+            style="background:#ffeaa7;"
+        >
+            AQI: 56 - Moderate
+        </div>
+
+        <p id="advice">💡 Air quality is moderate.</p>
+
+    </div>
+
 </div>
 
 <script>
-async function searchCity(){
-let city=document.getElementById('cityInput').value;
-if(!city){city='Lahore';}
-document.getElementById('cityName').innerText=city+' Loading...';
-try{
-let g=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+city+'&count=1');
-let gd=await g.json();
-if(!gd.results){alert('City not found');return;}
-let lat=gd.results[0].latitude;
-let lon=gd.results[0].longitude;
-let name=gd.results[0].name;
-let w=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current_weather=true');
-let wd=await w.json();
-let a=await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+lat+'&longitude='+lon+'&current=us_aqi');
-let ad=await a.json();
-document.getElementById('cityName').innerText=name;
-document.getElementById('temp').innerText=wd.current_weather.temperature+'°C';
-document.getElementById('desc').innerText='Live Weather - Wind: '+wd.current_weather.windspeed+' km/h';
+
+async function searchCity() {
+
+    let city = document.getElementById('cityInput').value.trim();
+
+    if (!city) {
+        alert('Please enter a city name.');
+        return;
+    }
+
+    const cityName = document.getElementById('cityName');
+    const temp = document.getElementById('temp');
+    const desc = document.getElementById('desc');
+    const box = document.getElementById('aqiBox');
+    const advice = document.getElementById('advice');
+
+    cityName.innerText = 'Loading weather and air quality...';
+
+    try {
+
+        // Find the city's geographical coordinates
+        let g = await fetch(
+            'https://geocoding-api.open-meteo.com/v1/search?name='
+            + encodeURIComponent(city)
+            + '&count=1&language=en&format=json'
+        );
+
+        if (!g.ok) {
+            throw new Error('Unable to search for this city.');
+        }
+
+        let gd = await g.json();
+
+        if (!gd.results || gd.results.length === 0) {
+            cityName.innerText = 'City Not Found';
+            alert('City not found. Please try another city.');
+            return;
+        }
+
+        let lat = gd.results[0].latitude;
+        let lon = gd.results[0].longitude;
+        let name = gd.results[0].name;
+
+        // Get current weather
+        let w = await fetch(
+            'https://api.open-meteo.com/v1/forecast?latitude='
+            + lat
+            + '&longitude='
+            + lon
+            + '&current_weather=true'
+        );
+
+        if (!w.ok) {
+            throw new Error('Unable to load weather data.');
+        }
+
+        let wd = await w.json();
+
+        // Get current air quality
+        let a = await fetch(
+            'https://air-quality-api.open-meteo.com/v1/air-quality?latitude='
+            + lat
+            + '&longitude='
+            + lon
+            + '&current=us_aqi'
+        );
+
+        if (!a.ok) {
+            throw new Error('Unable to load air quality data.');
+        }
+
+        let ad = await a.json();
+
+        // Check whether data is available
+        if (!wd.current_weather || !ad.current ||
+            ad.current.us_aqi == null) {
+            throw new Error('Current weather or AQI data is unavailable.');
+        }
+
+        // Display city and weather information
+        cityName.innerText = name;
+
+        temp.innerText =
+            wd.current_weather.temperature + '°C';
+
+        desc.innerText =
+            'Current Weather - Wind: '
+            + wd.current_weather.windspeed
+            + ' km/h';
+
+        // Display air quality information
+        let aqi = ad.current.us_aqi;
+
+        if (aqi <= 50) {
+
+            box.style.background = '#55efc4';
+            box.innerText = 'AQI: ' + aqi + ' - Good';
+
+            advice.innerText =
+                '💡 Air quality is good. Enjoy your outdoor activities.';
+
+        } else if (aqi <= 100) {
+
+            box.style.background = '#ffeaa7';
+            box.innerText = 'AQI: ' + aqi + ' - Moderate';
+
+            advice.innerText =
+                '💡 Air quality is acceptable. Sensitive individuals should limit prolonged outdoor activities if they experience symptoms.';
+
+        } else if (aqi <= 150) {
+
+            box.style.background = '#fab1a0';
+            box.innerText = 'AQI: ' + aqi + ' - Unhealthy for Sensitive Groups';
+
+            advice.innerText =
+                '😷 Sensitive individuals should reduce prolonged outdoor exertion.';
+
+        } else if (aqi <= 200) {
+
+            box.style.background = '#ff7675';
+            box.innerText = 'AQI: ' + aqi + ' - Unhealthy';
+
+            advice.innerText =
+                '⚠️ Reduce outdoor activities, especially prolonged exertion.';
+
+        } else if (aqi <= 300) {
+
+            box.style.background = '#a29bfe';
+            box.innerText = 'AQI: ' + aqi + ' - Very Unhealthy';
+
+            advice.innerText =
+                '⚠️ Avoid prolonged outdoor activities and follow local health guidance.';
+
+        } else {
+
+            box.style.background = '#636e72';
+            box.style.color = 'white';
+            box.innerText = 'AQI: ' + aqi + ' - Hazardous';
+
+            advice.innerText =
+                '🚨 Avoid outdoor exertion and follow local public health advice.';
+        }
+
+        if (aqi <= 300) {
+            box.style.color = '#222';
+        }
+
+    } catch (e) {
+
+        cityName.innerText = 'Unable to Load Data';
+
+        alert(
+            'Unable to load weather or air quality data. Please check your internet connection and try again.'
+        );
+
+        console.error(e);
+    }
+}
+
+// Allow users to search by pressing Enter
+document.getElementById('cityInput').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+        searchCity();
+    }
+});
+
+</script>
+
+</body>
+</html>
